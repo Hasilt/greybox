@@ -1,0 +1,114 @@
+[
+  {
+    "question": "What are collections in Qdrant and what parameters must be configured at creation time?",
+    "relevant_sources": ["qdrant.md"]
+  },
+  {
+    "question": "What are the three primary distance metrics supported by Qdrant?",
+    "relevant_sources": ["qdrant.md"]
+  },
+  {
+    "question": "What is HNSW and what do the m and ef_construct parameters control?",
+    "relevant_sources": ["qdrant.md"]
+  },
+  {
+    "question": "What are payloads in Qdrant and how can they be filtered during search?",
+    "relevant_sources": ["qdrant.md"]
+  },
+  {
+    "question": "What is the difference between EXPIRE and PEXPIRE commands in Redis?",
+    "relevant_sources": ["redis.md"]
+  },
+  {
+    "question": "What does the allkeys-lru eviction policy do in Redis?",
+    "relevant_sources": ["redis.md"]
+  },
+  {
+    "question": "What is the difference between RDB snapshots and AOF in Redis persistence?",
+    "relevant_sources": ["redis.md"]
+  },
+  {
+    "question": "How are transactions and atomic operations implemented in Redis?",
+    "relevant_sources": ["redis.md"]
+  },
+  {
+    "question": "What does ASGI stand for and why is it important for FastAPI?",
+    "relevant_sources": ["fastapi.md"]
+  },
+  {
+    "question": "How does FastAPI automatically validate incoming request data?",
+    "relevant_sources": ["fastapi.md"]
+  },
+  {
+    "question": "What is dependency injection in FastAPI and how does it work?",
+    "relevant_sources": ["fastapi.md"]
+  },
+  {
+    "question": "How do async endpoints in FastAPI enable concurrency?",
+    "relevant_sources": ["fastapi.md"]
+  },
+  {
+    "question": "What is approximate nearest neighbor (ANN) search and what does recall measure?",
+    "relevant_sources": ["vector-search.md"]
+  },
+  {
+    "question": "What is the recall-latency tradeoff in vector search algorithms?",
+    "relevant_sources": ["vector-search.md"]
+  },
+  {
+    "question": "What is re-ranking and why is it used in retrieval systems?",
+    "relevant_sources": ["vector-search.md"]
+  },
+  {
+    "question": "How does hybrid search combine dense and sparse retrieval?",
+    "relevant_sources": ["vector-search.md"]
+  },
+  {
+    "question": "What is the embedding dimension of the BAAI/bge-small-en-v1.5 model?",
+    "relevant_sources": ["embeddings.md"]
+  },
+  {
+    "question": "What are sentence-transformers and how do they differ from BERT?",
+    "relevant_sources": ["embeddings.md"]
+  },
+  {
+    "question": "Why are vectors normalized for cosine similarity and how does this affect computation?",
+    "relevant_sources": ["embeddings.md"]
+  },
+  {
+    "question": "What is embedding drift and how can it be detected?",
+    "relevant_sources": ["embeddings.md"]
+  },
+  {
+    "question": "What are the two main stages of a retrieval-augmented generation (RAG) pipeline?",
+    "relevant_sources": ["rag.md"]
+  },
+  {
+    "question": "How do chunk size and chunk overlap affect retrieval quality in RAG?",
+    "relevant_sources": ["rag.md"]
+  },
+  {
+    "question": "Why does retrieval quality dominate end-to-end RAG quality?",
+    "relevant_sources": ["rag.md"]
+  },
+  {
+    "question": "What are the main failure modes in RAG systems?",
+    "relevant_sources": ["rag.md"]
+  },
+  {
+    "question": "What is the difference between p95 latency and average latency in observability?",
+    "relevant_sources": ["observability.md"]
+  },
+  {
+    "question": "What is cache hit rate and why is it an important metric?",
+    "relevant_sources": ["observability.md"]
+  },
+  {
+    "question": "What is Hit@k and MRR in retrieval evaluation?",
+    "relevant_sources": ["observability.md"]
+  },
+  {
+    "question": "How does centroid embedding drift detection work and when should re-indexing be triggered?",
+    "relevant_sources": ["observability.md"]
+  }
+]
