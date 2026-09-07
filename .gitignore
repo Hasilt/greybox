@@ -23,6 +23,9 @@ data/documents/_drift_sim_*.md
 .cache/
 hf_cache/
 
+# Local, gitignored documentation
+docs/
+
 # OS / editor
 .DS_Store
 .idea/

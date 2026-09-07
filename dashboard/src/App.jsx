@@ -77,6 +77,9 @@ export default function App() {
               hit_at_5: res.hit_at_5,
               hits: res.hits,
               total: res.total_questions,
+              mrr: res.mrr,
+              recall_at_5: res.recall_at_5,
+              ndcg_at_5: res.ndcg_at_5,
               results: Array.isArray(res.results) ? res.results : [],
             },
             ...list,
@@ -102,7 +105,11 @@ export default function App() {
       primary: true,
       onClick: () =>
         runAction('eval', api.runEvaluation, (r) =>
-          `Evaluation complete · Hit@5 ${(r.hit_at_5 * 100).toFixed(1)}% (${r.hits}/${r.total_questions})`
+          `Evaluation complete · Hit@5 ${(r.hit_at_5 * 100).toFixed(1)}% · MRR ${(
+            (r.mrr ?? 0) * 100
+          ).toFixed(1)}% · nDCG@5 ${(r.ndcg_at_5 ?? 0).toFixed(3)} (${r.hits}/${
+            r.total_questions
+          })`
         ),
     },
     {

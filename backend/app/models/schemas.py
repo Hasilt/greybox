@@ -97,12 +97,18 @@ class EvaluationQuestionResult(BaseModel):
     hit: bool
     retrieved_sources: list[str]
     relevant_sources: list[str]
+    rr: float = Field(description="Reciprocal rank of the first relevant source (0 if none)")
+    recall: float = Field(description="Fraction of relevant sources retrieved in the top-k")
+    ndcg: float = Field(description="Binary-relevance nDCG@k for this question")
 
 
 class EvaluationResponse(BaseModel):
     total_questions: int
     hits: int
     hit_at_5: float
+    mrr: float = Field(description="Mean reciprocal rank over all questions")
+    recall_at_5: float = Field(description="Mean recall@5 over all questions")
+    ndcg_at_5: float = Field(description="Mean nDCG@5 over all questions")
     results: list[EvaluationQuestionResult]
 
 
