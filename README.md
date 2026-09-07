@@ -14,8 +14,8 @@ are everything around the LLM call:
 - **Redis** query caching with configurable TTL and hit/miss counters.
 - **Latency observability**: per-request breakdown (embedding / Qdrant / LLM)
   plus p50/p95/p99 percentiles over a rolling window.
-- **Retrieval-quality evaluation**: Hit@5 against a ground-truth question set,
-  no LLM in the loop.
+- **Retrieval-quality evaluation**: Hit@5, MRR, Recall@5 and nDCG@5 against a
+  ground-truth question set, no LLM in the loop.
 - **Embedding-drift detection**: corpus-centroid cosine drift vs. a saved
   baseline, with a synchronous auto-reindex trigger past a threshold.
 - **React dashboard** (Vite + Recharts) visualizing all of the above.
@@ -283,17 +283,29 @@ retrieval request never fails just because the LLM is down.**
 - **Invalidation.** There is none beyond TTL. Re-ingesting documents does not
   purge the cache; stale entries age out on their own.
 
-## 10. How Hit@5 works
+## 10. How retrieval evaluation works
 
 `POST /api/evaluation/run` measures retrieval quality only — no LLM is involved.
+Four aggregate metrics are reported, all computed from the same top-5 search:
 
 1. Load `data/evaluation/questions.json` — 28 ground-truth questions, each with a
    `relevant_sources` list (e.g. `["qdrant.md"]`).
 2. Embed each question with the same local model used for ingestion.
 3. Run a Qdrant top-5 cosine search.
-4. Score a **hit** for a question if *any* of its `relevant_sources` appears
-   among the 5 retrieved chunks' sources.
-5. `hit_at_5 = hits / total_questions`.
+4. Relevance is **binary and source-level**: a retrieved chunk is relevant when
+   its `source` is in the question's `relevant_sources`.
+5. Score each question, then average across the set:
+
+| Metric | Per-question definition | What it adds over Hit@5 |
+| --- | --- | --- |
+| `hit_at_5` | 1 if *any* relevant source appears in the top 5, else 0 | The smoke-test signal |
+| `mrr` | `1 / rank` of the *first* relevant source (0 if none) | Penalizes late first-hits |
+| `recall_at_5` | `|top-5 sources ∩ relevant| / |relevant|` | Measures coverage when several sources are relevant |
+| `ndcg_at_5` | Binary-gain `DCG@5 / IDCG@5`: `Σ rel_i/log2(i+1)` over the ranking vs. the ideal. Only the **first occurrence** of each relevant source earns a gain (later chunks from the same source contribute 0), so duplicates can't push the score above 1 | Rewards *ranking quality* — where in the top-5 the hits sit |
+
+Example: for `relevant_sources: ["qdrant.md"]`, retrieving
+`[redis.md, qdrant.md, ...]` gives `hit=1`, `rr=0.5` (first hit at rank 2),
+`recall=1.0`, `ndcg≈0.63` (position discount for rank 2).
 
 Response:
 
@@ -302,13 +314,25 @@ Response:
   "total_questions": 28,
   "hits": 28,
   "hit_at_5": 1.0,
+  "mrr": 0.9929,
+  "recall_at_5": 1.0,
+  "ndcg_at_5": 0.9977,
   "results": [
     { "question": "What are collections in Qdrant ...",
       "hit": true,
-      "retrieved_sources": ["qdrant.md", "qdrant.md", "vector-search.md", "rag.md", "embeddings.md"] }
+      "rr": 1.0,
+      "recall": 1.0,
+      "ndcg": 1.0,
+      "retrieved_sources": ["qdrant.md", "qdrant.md", "vector-search.md", "rag.md", "embeddings.md"],
+      "relevant_sources": ["qdrant.md"] }
   ]
 }
 ```
+
+> The metric values above are illustrative of the response shape. On the easy
+> seed set a correctly wired system scores near 1.0 on all four metrics — nDCG
+> below 1.0 while Hit@5 stays at 1.0 means relevant sources are retrieved but
+> ranked below the top positions.
 
 The seed set is deliberately easy (each question has an obvious source), so a
 correctly wired system scores at or near `1.0` on it — it is a smoke test for the
@@ -386,7 +410,7 @@ acceptable because the seed corpus is tiny.
 | `POST` | `/api/ingest` | Chunk, embed, and upsert `data/documents/`; recompute and save the drift baseline centroid |
 | `POST` | `/api/query` | Cached retrieval (+ optional LLM answer); returns chunks, scores, `cache_hit`, latency breakdown |
 | `GET` | `/api/metrics` | Query counts, cache hit rate, p50/p95/p99 latency, recent-request series for charting |
-| `POST` | `/api/evaluation/run` | Run Hit@5 over the ground-truth question set (no LLM) |
+| `POST` | `/api/evaluation/run` | Run Hit@5 + MRR / Recall@5 / nDCG@5 over the ground-truth question set (no LLM) |
 | `GET` | `/api/drift` | Current corpus-centroid drift score vs. baseline |
 | `POST` | `/api/drift/simulate` | Demo: inject an off-topic doc and re-ingest without updating the baseline |
 | `POST` | `/api/drift/check` | Compute drift; synchronously reindex if over threshold |
@@ -416,7 +440,7 @@ Coverage (`backend/tests/`):
 | `test_chunking.py` | Word-window chunking, overlap, empty-document handling |
 | `test_cache.py` | Cache miss then hit, key normalization |
 | `test_retrieval.py` | Qdrant hit -> `RetrievedChunk` payload mapping |
-| `test_evaluation.py` | Hit@5 counting math |
+| `test_evaluation.py` | Hit@5 counting plus MRR / Recall@5 / nDCG@5 math |
 | `test_drift.py` | Centroid computation and cosine drift-score math |
 | `test_api.py` | `/health`, `/api/query`, `/api/metrics` HTTP behavior |
 
@@ -477,7 +501,7 @@ cache_misses)`. The whole payload is process-local and resets on restart.
 - **No authentication or rate limiting** on any endpoint.
 - **LLM answers are best-effort.** With no Ollama/OpenAI configured, `answer` is
   always `null` (retrieval still works).
-- **Hit@5 quality is bounded by the seed dataset.** 28 questions over 7 seed
+- **Evaluation quality is bounded by the seed dataset.** 28 questions over 7 seed
   documents is a smoke test, not a rigorous benchmark.
 
 ## 17. Future improvements
@@ -488,7 +512,6 @@ cache_misses)`. The whole payload is process-local and resets on restart.
 - Async / background re-indexing behind a job queue instead of blocking the
   request.
 - Hybrid retrieval (dense + sparse / BM25) plus a re-ranking stage.
-- Additional retrieval metrics: MRR, recall@k, nDCG alongside Hit@5.
 - Distributional drift detection (MMD, population stability index) and
   per-cluster drift instead of one global centroid.
 - Per-document drift attribution — identify *which* documents moved the corpus.
